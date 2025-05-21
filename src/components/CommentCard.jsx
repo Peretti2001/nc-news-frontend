@@ -11,7 +11,7 @@ export default function CommentCard({ comment }) {
         borderRadius: 6,
         padding: 12,
         marginBottom: 12,
-        backgroundColor: "#fafafa",
+        backgroundColor: "grey",
       }}
       aria-labelledby={`comment-${comment_id}`}
     >

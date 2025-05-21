@@ -1,7 +1,7 @@
-// src/pages/ArticlePage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import CommentList from "../components/CommentList";
+import VoteControls from "../components/VoteControls";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -16,17 +16,25 @@ export default function ArticlePage() {
   const [loadingC, setLoadingC] = useState(true);
   const [errorC, setErrorC] = useState(null);
 
+  // Separate counters for upvotes and downvotes by this user
+  const [upCount, setUpCount] = useState(0);
+  const [downCount, setDownCount] = useState(0);
+
+  // Fetch article
   useEffect(() => {
     fetch(`${API}/api/articles/${article_id}`)
       .then((res) => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
-      .then(({ article }) => setArticle(article))
+      .then(({ article }) => {
+        setArticle(article);
+      })
       .catch((err) => setErrorA(err.message))
       .finally(() => setLoadingA(false));
   }, [article_id]);
 
+  // Fetch comments
   useEffect(() => {
     fetch(`${API}/api/articles/${article_id}/comments`)
       .then((res) => {
@@ -37,6 +45,31 @@ export default function ArticlePage() {
       .catch((err) => setErrorC(err.message))
       .finally(() => setLoadingC(false));
   }, [article_id]);
+
+  // Handlers for upvote/downvote
+  const handleUp = () => {
+    setUpCount((prev) => prev + 1);
+    fetch(`${API}/api/articles/${article_id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inc_votes: 1 }),
+    }).catch(() => {
+      setUpCount((prev) => prev - 1);
+      alert("Upvote failed. Please try again.");
+    });
+  };
+
+  const handleDown = () => {
+    setDownCount((prev) => prev + 1);
+    fetch(`${API}/api/articles/${article_id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inc_votes: -1 }),
+    }).catch(() => {
+      setDownCount((prev) => prev - 1);
+      alert("Downvote failed. Please try again.");
+    });
+  };
 
   if (loadingA) return <p style={{ padding: "1rem" }}>Loading article…</p>;
   if (errorA)
@@ -55,19 +88,16 @@ export default function ArticlePage() {
           {new Date(article.created_at).toLocaleDateString()}
         </p>
         <div style={{ margin: "1rem 0" }}>{article.body}</div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            maxWidth: 200,
-          }}
-        >
-          <span role="img" aria-label="votes">
-            {article.votes} 👍
-          </span>
-          <span role="img" aria-label="comments">
-            {article.comment_count} 💬
-          </span>
+
+        <VoteControls
+          upCount={upCount}
+          downCount={downCount}
+          onUp={handleUp}
+          onDown={handleDown}
+        />
+
+        <div style={{ marginTop: "0.5rem", color: "#666", fontSize: "0.9rem" }}>
+          Total votes: {article.votes + upCount - downCount}
         </div>
       </article>
 
