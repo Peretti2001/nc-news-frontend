@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import CommentList from "../components/CommentList";
+import CommentForm from "../components/CommentForm";
 import VoteControls from "../components/VoteControls";
 
 const API = import.meta.env.VITE_API_URL;
@@ -8,15 +9,17 @@ const API = import.meta.env.VITE_API_URL;
 export default function ArticlePage() {
   const { article_id } = useParams();
 
+  // Article state
   const [article, setArticle] = useState(null);
   const [loadingA, setLoadingA] = useState(true);
   const [errorA, setErrorA] = useState(null);
 
+  // Comments state
   const [comments, setComments] = useState([]);
   const [loadingC, setLoadingC] = useState(true);
   const [errorC, setErrorC] = useState(null);
 
-  // Separate counters for upvotes and downvotes by this user
+  // Voting state
   const [upCount, setUpCount] = useState(0);
   const [downCount, setDownCount] = useState(0);
 
@@ -29,8 +32,10 @@ export default function ArticlePage() {
       })
       .then(({ article }) => {
         setArticle(article);
+        setUpCount(0);
+        setDownCount(0);
       })
-      .catch((err) => setErrorA(err.message))
+      .catch(() => setErrorA("Failed to load article"))
       .finally(() => setLoadingA(false));
   }, [article_id]);
 
@@ -42,38 +47,42 @@ export default function ArticlePage() {
         return res.json();
       })
       .then(({ comments }) => setComments(comments))
-      .catch((err) => setErrorC(err.message))
+      .catch(() => setErrorC("Failed to load comments"))
       .finally(() => setLoadingC(false));
   }, [article_id]);
 
-  // Handlers for upvote/downvote
+  // Voting handlers
   const handleUp = () => {
-    setUpCount((prev) => prev + 1);
+    setUpCount((u) => u + 1);
     fetch(`${API}/api/articles/${article_id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inc_votes: 1 }),
     }).catch(() => {
-      setUpCount((prev) => prev - 1);
+      setUpCount((u) => u - 1);
       alert("Upvote failed. Please try again.");
     });
   };
 
   const handleDown = () => {
-    setDownCount((prev) => prev + 1);
+    setDownCount((d) => d + 1);
     fetch(`${API}/api/articles/${article_id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inc_votes: -1 }),
     }).catch(() => {
-      setDownCount((prev) => prev - 1);
+      setDownCount((d) => d - 1);
       alert("Downvote failed. Please try again.");
     });
   };
 
+  // New comment handler
+  const handleAddComment = (newComment) => {
+    setComments((prev) => [newComment, ...prev]);
+  };
+
   if (loadingA) return <p style={{ padding: "1rem" }}>Loading article…</p>;
-  if (errorA)
-    return <p style={{ padding: "1rem", color: "red" }}>Error: {errorA}</p>;
+  if (errorA) return <p style={{ padding: "1rem", color: "red" }}>{errorA}</p>;
 
   return (
     <div style={{ padding: "1rem", maxWidth: 800, margin: "0 auto" }}>
@@ -96,16 +105,16 @@ export default function ArticlePage() {
           onDown={handleDown}
         />
 
-        <div style={{ marginTop: "0.5rem", color: "#666", fontSize: "0.9rem" }}>
+        <div style={{ color: "#666", marginTop: "0.5rem" }}>
           Total votes: {article.votes + upCount - downCount}
         </div>
       </article>
 
       {loadingC && <p>Loading comments…</p>}
-      {errorC && (
-        <p style={{ color: "red" }}>Error loading comments: {errorC}</p>
-      )}
+      {errorC && <p style={{ color: "red" }}>{errorC}</p>}
       {!loadingC && !errorC && <CommentList comments={comments} />}
+
+      <CommentForm articleId={article_id} onAddComment={handleAddComment} />
     </div>
   );
 }
