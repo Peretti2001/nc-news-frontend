@@ -1,17 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 
-export default function CommentCard({ comment }) {
+export default function CommentCard({ comment, currentUser, onDelete }) {
   const { comment_id, author, body, votes, created_at } = comment;
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = () => {
+    if (!window.confirm("Delete this comment?")) return;
+    setIsDeleting(true);
+    fetch(`${import.meta.env.VITE_API_URL}/api/comments/${comment_id}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        onDelete(comment_id);
+      })
+      .catch(() => {
+        alert("Failed to delete comment. Please try again.");
+        setIsDeleting(false);
+      });
+  };
 
   return (
     <article
-      key={comment_id}
       style={{
+        backgroundColor: "#fff",
         border: "1px solid #ddd",
         borderRadius: 6,
         padding: 12,
         marginBottom: 12,
-        backgroundColor: "grey",
       }}
       aria-labelledby={`comment-${comment_id}`}
     >
@@ -22,7 +38,23 @@ export default function CommentCard({ comment }) {
         </span>
       </h3>
       <p style={{ margin: "8px 0" }}>{body}</p>
-      <div style={{ fontSize: "0.9rem", color: "#333" }}>👍 {votes}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <span style={{ fontSize: "0.9rem", color: "#333" }}>👍 {votes}</span>
+        {author === currentUser && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            style={{
+              cursor: "pointer",
+              background: "none",
+              border: "none",
+              color: "red",
+            }}
+          >
+            {isDeleting ? "Deleting…" : "Delete"}
+          </button>
+        )}
+      </div>
     </article>
   );
 }

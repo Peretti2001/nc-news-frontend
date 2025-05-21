@@ -5,6 +5,7 @@ import CommentForm from "../components/CommentForm";
 import VoteControls from "../components/VoteControls";
 
 const API = import.meta.env.VITE_API_URL;
+const currentUser = "butter_bridge";
 
 export default function ArticlePage() {
   const { article_id } = useParams();
@@ -27,7 +28,7 @@ export default function ArticlePage() {
   useEffect(() => {
     fetch(`${API}/api/articles/${article_id}`)
       .then((res) => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
+        if (!res.ok) throw new Error();
         return res.json();
       })
       .then(({ article }) => {
@@ -43,7 +44,7 @@ export default function ArticlePage() {
   useEffect(() => {
     fetch(`${API}/api/articles/${article_id}/comments`)
       .then((res) => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
+        if (!res.ok) throw new Error();
         return res.json();
       })
       .then(({ comments }) => setComments(comments))
@@ -60,7 +61,7 @@ export default function ArticlePage() {
       body: JSON.stringify({ inc_votes: 1 }),
     }).catch(() => {
       setUpCount((u) => u - 1);
-      alert("Upvote failed. Please try again.");
+      alert("Upvote failed.");
     });
   };
 
@@ -72,17 +73,22 @@ export default function ArticlePage() {
       body: JSON.stringify({ inc_votes: -1 }),
     }).catch(() => {
       setDownCount((d) => d - 1);
-      alert("Downvote failed. Please try again.");
+      alert("Downvote failed.");
     });
   };
 
-  // New comment handler
+  // Add comment
   const handleAddComment = (newComment) => {
     setComments((prev) => [newComment, ...prev]);
   };
 
-  if (loadingA) return <p style={{ padding: "1rem" }}>Loading article…</p>;
-  if (errorA) return <p style={{ padding: "1rem", color: "red" }}>{errorA}</p>;
+  // Delete comment
+  const handleDeleteComment = (deletedId) => {
+    setComments((prev) => prev.filter((c) => c.comment_id !== deletedId));
+  };
+
+  if (loadingA) return <p>Loading article…</p>;
+  if (errorA) return <p style={{ color: "red" }}>{errorA}</p>;
 
   return (
     <div style={{ padding: "1rem", maxWidth: 800, margin: "0 auto" }}>
@@ -92,7 +98,7 @@ export default function ArticlePage() {
 
       <article style={{ marginBottom: "2rem" }}>
         <h1>{article.title}</h1>
-        <p style={{ fontSize: "0.9rem", color: "#555" }}>
+        <p style={{ color: "#555" }}>
           {article.topic} • by {article.author} •{" "}
           {new Date(article.created_at).toLocaleDateString()}
         </p>
@@ -112,7 +118,13 @@ export default function ArticlePage() {
 
       {loadingC && <p>Loading comments…</p>}
       {errorC && <p style={{ color: "red" }}>{errorC}</p>}
-      {!loadingC && !errorC && <CommentList comments={comments} />}
+      {!loadingC && !errorC && (
+        <CommentList
+          comments={comments}
+          currentUser={currentUser}
+          onDeleteComment={handleDeleteComment}
+        />
+      )}
 
       <CommentForm articleId={article_id} onAddComment={handleAddComment} />
     </div>
