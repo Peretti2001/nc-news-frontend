@@ -1,46 +1,46 @@
+// src/pages/ArticlePage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import CommentList from "../components/CommentList";
+
+const API = import.meta.env.VITE_API_URL;
 
 export default function ArticlePage() {
   const { article_id } = useParams();
 
   const [article, setArticle] = useState(null);
-  const [loadingArticle, setLoadingArticle] = useState(true);
-  const [errorArticle, setErrorArticle] = useState(null);
+  const [loadingA, setLoadingA] = useState(true);
+  const [errorA, setErrorA] = useState(null);
 
   const [comments, setComments] = useState([]);
-  const [loadingComments, setLoadingComments] = useState(true);
-  const [errorComments, setErrorComments] = useState(null);
+  const [loadingC, setLoadingC] = useState(true);
+  const [errorC, setErrorC] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/articles/${article_id}`)
+    fetch(`${API}/api/articles/${article_id}`)
       .then((res) => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
       .then(({ article }) => setArticle(article))
-      .catch((err) => setErrorArticle(err.message))
-      .finally(() => setLoadingArticle(false));
+      .catch((err) => setErrorA(err.message))
+      .finally(() => setLoadingA(false));
   }, [article_id]);
 
   useEffect(() => {
-    fetch(`/api/articles/${article_id}/comments`)
+    fetch(`${API}/api/articles/${article_id}/comments`)
       .then((res) => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
       .then(({ comments }) => setComments(comments))
-      .catch((err) => setErrorComments(err.message))
-      .finally(() => setLoadingComments(false));
+      .catch((err) => setErrorC(err.message))
+      .finally(() => setLoadingC(false));
   }, [article_id]);
 
-  if (loadingArticle)
-    return <p style={{ padding: "1rem" }}>Loading article…</p>;
-  if (errorArticle)
-    return (
-      <p style={{ padding: "1rem", color: "red" }}>Error: {errorArticle}</p>
-    );
+  if (loadingA) return <p style={{ padding: "1rem" }}>Loading article…</p>;
+  if (errorA)
+    return <p style={{ padding: "1rem", color: "red" }}>Error: {errorA}</p>;
 
   return (
     <div style={{ padding: "1rem", maxWidth: 800, margin: "0 auto" }}>
@@ -71,13 +71,11 @@ export default function ArticlePage() {
         </div>
       </article>
 
-      {loadingComments && <p>Loading comments…</p>}
-      {errorComments && (
-        <p style={{ color: "red" }}>Error loading comments: {errorComments}</p>
+      {loadingC && <p>Loading comments…</p>}
+      {errorC && (
+        <p style={{ color: "red" }}>Error loading comments: {errorC}</p>
       )}
-      {!loadingComments && !errorComments && (
-        <CommentList comments={comments} />
-      )}
+      {!loadingC && !errorC && <CommentList comments={comments} />}
     </div>
   );
 }

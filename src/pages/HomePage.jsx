@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import ArticleList from "../components/ArticleList";
 
+const API = import.meta.env.VITE_API_URL; // ← picks up dev or prod URL
+
 export default function HomePage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("/api/articles")
+    fetch(`${API}/api/articles`)
       .then((res) => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
