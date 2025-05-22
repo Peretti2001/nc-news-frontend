@@ -4,47 +4,36 @@ import CommentList from "../components/CommentList";
 import CommentForm from "../components/CommentForm";
 import VoteControls from "../components/VoteControls";
 
-const API = import.meta.env.VITE_API_URL;
-const currentUser = "butter_bridge";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 export default function ArticlePage() {
   const { article_id } = useParams();
 
-  // Article state
   const [article, setArticle] = useState(null);
   const [loadingA, setLoadingA] = useState(true);
   const [errorA, setErrorA] = useState(null);
+  const [upCount, setUpCount] = useState(0);
+  const [downCount, setDownCount] = useState(0);
 
-  // Comments state
   const [comments, setComments] = useState([]);
   const [loadingC, setLoadingC] = useState(true);
   const [errorC, setErrorC] = useState(null);
 
-  // Voting state
-  const [upCount, setUpCount] = useState(0);
-  const [downCount, setDownCount] = useState(0);
-
-  // Fetch article
   useEffect(() => {
-    fetch(`${API}/api/articles/${article_id}`)
+    fetch(`${BASE_URL}/api/articles/${article_id}`)
       .then((res) => {
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
-      .then(({ article }) => {
-        setArticle(article);
-        setUpCount(0);
-        setDownCount(0);
-      })
+      .then(({ article }) => setArticle(article))
       .catch(() => setErrorA("Failed to load article"))
       .finally(() => setLoadingA(false));
   }, [article_id]);
 
-  // Fetch comments
   useEffect(() => {
-    fetch(`${API}/api/articles/${article_id}/comments`)
+    fetch(`${BASE_URL}/api/articles/${article_id}/comments`)
       .then((res) => {
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
       .then(({ comments }) => setComments(comments))
@@ -52,79 +41,60 @@ export default function ArticlePage() {
       .finally(() => setLoadingC(false));
   }, [article_id]);
 
-  // Voting handlers
-  const handleUp = () => {
+  const handleUpvote = () => {
     setUpCount((u) => u + 1);
-    fetch(`${API}/api/articles/${article_id}`, {
+    fetch(`${BASE_URL}/api/articles/${article_id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inc_votes: 1 }),
     }).catch(() => {
       setUpCount((u) => u - 1);
-      alert("Upvote failed.");
+      setErrorA("Failed to update vote");
     });
   };
 
-  const handleDown = () => {
+  const handleDownvote = () => {
     setDownCount((d) => d + 1);
-    fetch(`${API}/api/articles/${article_id}`, {
+    fetch(`${BASE_URL}/api/articles/${article_id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ inc_votes: -1 }),
     }).catch(() => {
       setDownCount((d) => d - 1);
-      alert("Downvote failed.");
+      setErrorA("Failed to update vote");
     });
   };
 
-  // Add comment
-  const handleAddComment = (newComment) => {
-    setComments((prev) => [newComment, ...prev]);
-  };
-
-  // Delete comment
-  const handleDeleteComment = (deletedId) => {
-    setComments((prev) => prev.filter((c) => c.comment_id !== deletedId));
-  };
+  const handleAddComment = (newComment) =>
+    setComments((c) => [newComment, ...c]);
 
   if (loadingA) return <p>Loading article…</p>;
   if (errorA) return <p style={{ color: "red" }}>{errorA}</p>;
 
   return (
-    <div style={{ padding: "1rem", maxWidth: 800, margin: "0 auto" }}>
-      <Link to="/" style={{ display: "inline-block", marginBottom: "1rem" }}>
-        ← Back to articles
-      </Link>
-
-      <article style={{ marginBottom: "2rem" }}>
+    <div style={{ padding: "1rem" }}>
+      <Link to="/">← Back to Home</Link>
+      <article style={{ marginTop: "1rem" }}>
         <h1>{article.title}</h1>
-        <p style={{ color: "#555" }}>
-          {article.topic} • by {article.author} •{" "}
+        <div style={{ color: "#666", marginTop: "0.5rem" }}>
+          By {article.author} on{" "}
           {new Date(article.created_at).toLocaleDateString()}
-        </p>
-        <div style={{ margin: "1rem 0" }}>{article.body}</div>
-
-        <VoteControls
-          upCount={upCount}
-          downCount={downCount}
-          onUp={handleUp}
-          onDown={handleDown}
-        />
-
+        </div>
+        <p style={{ marginTop: "1rem" }}>{article.body}</p>
         <div style={{ color: "#666", marginTop: "0.5rem" }}>
           Total votes: {article.votes + upCount - downCount}
         </div>
+        <VoteControls
+          upCount={upCount}
+          downCount={downCount}
+          onUp={handleUpvote}
+          onDown={handleDownvote}
+        />
       </article>
 
       {loadingC && <p>Loading comments…</p>}
       {errorC && <p style={{ color: "red" }}>{errorC}</p>}
-      {!loadingC && !errorC && (
-        <CommentList
-          comments={comments}
-          currentUser={currentUser}
-          onDeleteComment={handleDeleteComment}
-        />
-      )}
+      {!loadingC && !errorC && <CommentList comments={comments} />}
 
       <CommentForm articleId={article_id} onAddComment={handleAddComment} />
     </div>

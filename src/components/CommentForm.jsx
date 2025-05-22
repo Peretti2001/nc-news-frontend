@@ -1,69 +1,91 @@
+// src/components/CommentForm.jsx
 import React, { useState } from "react";
 
-export default function CommentForm({ articleId, onAddComment }) {
-  const currentUser = "butter_bridge";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
+export default function CommentForm({ articleId, onAddComment }) {
+  // ↓ use a user seeded in your dev DB
+  const [username, setUsername] = useState("tickle122");
   const [body, setBody] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [isPosting, setIsPosting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
 
-    if (!body.trim()) {
-      setError("Comment cannot be empty");
+    if (!username.trim() || !body.trim()) {
+      setError("Both username and comment are required.");
       return;
     }
 
-    setIsPosting(true);
-
-    fetch(
-      `${import.meta.env.VITE_API_URL}/api/articles/${articleId}/comments`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: currentUser, body }),
-      },
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        return res.json();
-      })
-      .then(({ comment }) => {
-        onAddComment(comment);
-        setBody("");
-        setSuccess(true);
-      })
-      .catch(() => {
-        setError("Failed to post comment. Please try again.");
-      })
-      .finally(() => {
-        setIsPosting(false);
-      });
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/articles/${articleId}/comments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, body }),
+        },
+      );
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const { comment } = await res.json();
+      onAddComment(comment);
+      setBody("");
+      setSuccess(true);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to post comment");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginTop: "2rem" }}>
-      <h2>Add a Comment</h2>
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        rows={4}
-        style={{ width: "100%", padding: 8 }}
-        placeholder="Write your comment here..."
-        disabled={isPosting}
-      />
+    <form onSubmit={handleSubmit} style={{ marginTop: "1rem" }}>
+      <h3>Post a Comment</h3>
+
+      <label>
+        Username
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          style={{ display: "block", width: "100%", marginBottom: "0.5rem" }}
+          required
+        />
+      </label>
+
+      <label>
+        Comment
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          style={{
+            display: "block",
+            width: "100%",
+            height: "80px",
+            marginBottom: "0.5rem",
+          }}
+          required
+        />
+      </label>
+
       {error && <p style={{ color: "red" }}>{error}</p>}
       {success && <p style={{ color: "green" }}>Comment posted!</p>}
+
       <button
         type="submit"
-        disabled={isPosting}
-        style={{ marginTop: 8, padding: "0.5rem 1rem", cursor: "pointer" }}
+        disabled={isSubmitting}
+        style={{
+          padding: "0.5rem 1rem",
+          cursor: isSubmitting ? "not-allowed" : "pointer",
+        }}
       >
-        {isPosting ? "Posting…" : "Post Comment"}
+        {isSubmitting ? "Posting…" : "Post Comment"}
       </button>
     </form>
   );

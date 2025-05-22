@@ -1,33 +1,32 @@
+// src/components/CommentCard.jsx
 import React, { useState } from "react";
 
-export default function CommentCard({ comment, currentUser, onDelete }) {
+export default function CommentCard({ comment, onDeleteComment }) {
   const { comment_id, author, body, votes, created_at } = comment;
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleDelete = () => {
-    if (!window.confirm("Delete this comment?")) return;
+  const handleDelete = async () => {
+    setError(null);
     setIsDeleting(true);
-    fetch(`${import.meta.env.VITE_API_URL}/api/comments/${comment_id}`, {
-      method: "DELETE",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        onDelete(comment_id);
-      })
-      .catch(() => {
-        alert("Failed to delete comment. Please try again.");
-        setIsDeleting(false);
-      });
+    try {
+      await fetch(`/api/comments/${comment_id}`, { method: "DELETE" });
+      onDeleteComment(comment_id);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete – please try again.");
+      setIsDeleting(false);
+    }
   };
 
   return (
     <article
       style={{
-        backgroundColor: "#fff",
         border: "1px solid #ddd",
         borderRadius: 6,
         padding: 12,
         marginBottom: 12,
+        position: "relative",
       }}
       aria-labelledby={`comment-${comment_id}`}
     >
@@ -37,24 +36,25 @@ export default function CommentCard({ comment, currentUser, onDelete }) {
           • {new Date(created_at).toLocaleString()}
         </span>
       </h3>
+
       <p style={{ margin: "8px 0" }}>{body}</p>
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-        <span style={{ fontSize: "0.9rem", color: "#333" }}>👍 {votes}</span>
-        {author === currentUser && (
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            style={{
-              cursor: "pointer",
-              background: "none",
-              border: "none",
-              color: "red",
-            }}
-          >
-            {isDeleting ? "Deleting…" : "Delete"}
-          </button>
-        )}
-      </div>
+      <div style={{ fontSize: "0.9rem", color: "#333" }}>👍 {votes}</div>
+
+      {error && <p style={{ color: "red", marginTop: "0.5rem" }}>{error}</p>}
+
+      <button
+        onClick={handleDelete}
+        disabled={isDeleting}
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          padding: "0.25rem 0.5rem",
+          cursor: isDeleting ? "not-allowed" : "pointer",
+        }}
+      >
+        {isDeleting ? "Deleting…" : "Delete"}
+      </button>
     </article>
   );
 }
