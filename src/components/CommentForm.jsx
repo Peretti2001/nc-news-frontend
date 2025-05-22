@@ -4,8 +4,7 @@ import React, { useState } from "react";
 const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 export default function CommentForm({ articleId, onAddComment }) {
-  // ↓ use a user seeded in your dev DB
-  const [username, setUsername] = useState("tickle122");
+  const [username, setUsername] = useState("");
   const [body, setBody] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -34,6 +33,7 @@ export default function CommentForm({ articleId, onAddComment }) {
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const { comment } = await res.json();
       onAddComment(comment);
+      setUsername("");
       setBody("");
       setSuccess(true);
     } catch (err) {
@@ -54,8 +54,7 @@ export default function CommentForm({ articleId, onAddComment }) {
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          style={{ display: "block", width: "100%", marginBottom: "0.5rem" }}
-          required
+          style={{ display: "block", width: "100%", margin: "0.5rem 0" }}
         />
       </label>
 
@@ -68,9 +67,8 @@ export default function CommentForm({ articleId, onAddComment }) {
             display: "block",
             width: "100%",
             height: "80px",
-            marginBottom: "0.5rem",
+            margin: "0.5rem 0",
           }}
-          required
         />
       </label>
 
