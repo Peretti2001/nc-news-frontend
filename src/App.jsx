@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import TopicsPage from "./pages/TopicsPage";
 import TopicPage from "./pages/TopicPage";
 import ArticlePage from "./pages/ArticlePage";
+import ErrorPage from "./pages/ErrorPage";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/topics" element={<TopicsPage />} />
         <Route path="/topics/:topic" element={<TopicPage />} />
         <Route path="/articles/:article_id" element={<ArticlePage />} />
+        <Route path="*" element={<ErrorPage message="Page not found" />} />
       </Routes>
     </Router>
   );
