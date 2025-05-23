@@ -1,4 +1,3 @@
-// src/pages/ArticlePage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import CommentList from "../components/CommentList";
@@ -6,7 +5,7 @@ import CommentForm from "../components/CommentForm";
 import VoteControls from "../components/VoteControls";
 import ErrorPage from "./ErrorPage";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+import { getSingleArticle, getComments, postComment } from "../utils/api";
 
 export default function ArticlePage() {
   const { article_id } = useParams();
@@ -20,30 +19,21 @@ export default function ArticlePage() {
   const [errorC, setErrorC] = useState(null);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/articles/${article_id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Article not found");
-        return res.json();
-      })
+    getSingleArticle(article_id)
       .then(({ article }) => setArticle(article))
       .catch((err) => setErrorA(err.message))
       .finally(() => setLoadingA(false));
   }, [article_id]);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/articles/${article_id}/comments`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Comments not found");
-        return res.json();
-      })
+    getComments(article_id)
       .then(({ comments }) => setComments(comments))
       .catch((err) => setErrorC(err.message))
       .finally(() => setLoadingC(false));
   }, [article_id]);
 
-  const handleAddComment = (newComment) => {
+  const handleAddComment = (newComment) =>
     setComments((curr) => [newComment, ...curr]);
-  };
 
   if (loadingA) return <p>Loading article…</p>;
   if (errorA) return <ErrorPage message={errorA} />;

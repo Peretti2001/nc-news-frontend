@@ -1,9 +1,7 @@
-// src/pages/HomePage.jsx
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import ArticleList from "../components/ArticleList";
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+import { getArticles } from "../utils/api";
 
 export default function HomePage() {
   const [articles, setArticles] = useState([]);
@@ -16,21 +14,16 @@ export default function HomePage() {
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ sort_by, order });
-    fetch(`${BASE_URL}/api/articles?${params.toString()}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        return res.json();
-      })
+    getArticles({ sort_by, order })
       .then(({ articles }) => setArticles(articles))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [sort_by, order]);
 
-  const handleSortByChange = (e) => {
+  const handleSortChange = (e) => {
     setSearchParams({ sort_by: e.target.value, order });
   };
-  const handleOrderToggle = () => {
+  const toggleOrder = () => {
     setSearchParams({ sort_by, order: order === "asc" ? "desc" : "asc" });
   };
 
@@ -45,14 +38,14 @@ export default function HomePage() {
       <div style={{ margin: "1rem 0" }}>
         <label>
           Sort by:&nbsp;
-          <select value={sort_by} onChange={handleSortByChange}>
+          <select value={sort_by} onChange={handleSortChange}>
             <option value="created_at">Date</option>
             <option value="comment_count">Comments</option>
             <option value="votes">Votes</option>
           </select>
         </label>
         <button
-          onClick={handleOrderToggle}
+          onClick={toggleOrder}
           style={{ marginLeft: "1rem", padding: "0.25rem 0.5rem" }}
         >
           Order: {order === "asc" ? "Ascending" : "Descending"}
