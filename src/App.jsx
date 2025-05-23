@@ -1,3 +1,4 @@
+// src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -13,8 +14,6 @@ import ErrorPage from "./pages/ErrorPage";
 export default function App() {
   return (
     <AuthProvider>
-      {" "}
-      {/* ← Wrap your app in AuthProvider */}
       <Router>
         <NavBar />
         <Routes>
